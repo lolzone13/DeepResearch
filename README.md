@@ -1,2 +1,2 @@
-# TurboNotes
-Note Taking App built with Go
+# Deep Research
+Deep Research Agent built with Go
