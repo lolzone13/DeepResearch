@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  host: "localhost"
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "password"
+  dbname: "deepresearch_dev"
+  sslmode: "disable"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+
+jwt:
+  secret: "your-super-secret-jwt-key-for-dev"
+  expiry_hours: 24
+
+grpc:
+  port: 9090
+  host: "localhost"
