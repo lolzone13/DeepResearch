@@ -17,10 +17,10 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   className = '',
 }) => {
   const variants = {
-    default: "bg-white dark:bg-gray-800 rounded-lg shadow-md",
-    glass: "bg-white/10 dark:bg-gray-800/10 backdrop-blur-lg rounded-lg border border-white/20",
-    bordered: "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700",
-    elevated: "bg-white dark:bg-gray-800 rounded-lg shadow-xl"
+    default: "bg-white dark:bg-gray-900 rounded-lg shadow-md",
+    glass: "bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg rounded-lg border border-white/20",
+    bordered: "bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700",
+    elevated: "bg-white dark:bg-gray-900 rounded-lg shadow-xl"
   };
 
   return (

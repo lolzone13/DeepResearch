@@ -9,7 +9,6 @@ import {
   StaggeredContainer,
   LoadingSpinner,
   ProgressBar,
-  TypewriterText,
   PulseCard
 } from './animations';
 
@@ -111,10 +110,9 @@ export const ResearchStreamer: React.FC = () => {
       <AnimatedContainer variant="slideDown">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <TypewriterText 
-              text="DeepResearch Stream" 
-              className="text-2xl font-bold text-gray-900 dark:text-white"
-            />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              DeepResearch Stream
+            </h1>
             <motion.div 
               className="flex items-center space-x-1"
               animate={state.isConnected ? { scale: [1, 1.1, 1] } : {}}
@@ -180,10 +178,9 @@ export const ResearchStreamer: React.FC = () => {
       {/* Progress Bar */}
       <AnimatedContainer variant="fadeIn" delay={0.2} className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <TypewriterText 
-            text={state.currentStep || 'Ready to start research...'} 
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-          />
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {state.currentStep || 'Ready to start research...'}
+          </p>
           <motion.span 
             className="text-sm text-gray-500 dark:text-gray-400"
             key={state.progress}
@@ -208,7 +205,7 @@ export const ResearchStreamer: React.FC = () => {
             <PulseCard
               key={index}
               isActive={isLastIncompleteStep}
-              className="step-item bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-4 flex items-center space-x-3"
+              className="step-item bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4 flex items-center space-x-3"
             >
               <div className="flex-shrink-0">
                 {isCompleted ? (
@@ -232,10 +229,9 @@ export const ResearchStreamer: React.FC = () => {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <TypewriterText 
-                  text={step.step}
-                  className="text-sm font-medium text-gray-900 dark:text-white"
-                />
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {step.step}
+                </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {new Date(step.timestamp).toLocaleTimeString()}
                 </p>
@@ -260,16 +256,12 @@ export const ResearchStreamer: React.FC = () => {
         <AnimatedContainer variant="fadeIn" delay={0.5}>
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <motion.div 
-              className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+              className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <Play className="w-8 h-8" />
             </motion.div>
-            <TypewriterText 
-              text="Click 'Start Research' to begin streaming research progress"
-              className="text-center"
-            />
           </div>
         </AnimatedContainer>
       )}
