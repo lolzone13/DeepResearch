@@ -18,7 +18,7 @@ type DB struct {
 // NewDatabase creates a new database connection
 func NewDatabase(cfg *config.Config) (*DB, error) {
 	dsn := cfg.GetDatabaseDSN()
-	
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -32,12 +32,12 @@ func NewDatabase(cfg *config.Config) (*DB, error) {
 // AutoMigrate runs database migrations for all models
 func (db *DB) AutoMigrate() error {
 	log.Println("Running database migrations...")
-	
+
 	err := db.DB.AutoMigrate(models.AllModels()...)
 	if err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
-	
+
 	log.Println("Database migrations completed successfully")
 	return nil
 }
