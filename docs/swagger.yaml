@@ -1,0 +1,499 @@
+basePath: /
+definitions:
+  AuthRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: password123
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  AuthResponse:
+    properties:
+      expires_at:
+        example: "2025-06-08T01:11:28Z"
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/UserInfo'
+    type: object
+  CreateSessionRequest:
+    properties:
+      max_sources:
+        example: 10
+        type: integer
+      query:
+        example: What are the latest developments in AI?
+        type: string
+      search_depth:
+        enum:
+        - shallow
+        - medium
+        - deep
+        example: deep
+        type: string
+      tags:
+        example:
+        - ai
+        - research
+        - technology
+        items:
+          type: string
+        type: array
+      title:
+        example: AI Research Session
+        type: string
+    required:
+    - query
+    type: object
+  ErrorResponse:
+    properties:
+      code:
+        example: 400
+        type: integer
+      error:
+        example: Invalid request
+        type: string
+      message:
+        example: The request is malformed
+        type: string
+    type: object
+  HealthResponse:
+    properties:
+      status:
+        example: healthy
+        type: string
+      timestamp:
+        example: "2025-06-07T01:11:28Z"
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
+  ResearchProgressEvent:
+    properties:
+      progress:
+        example: 25
+        type: integer
+      sources:
+        example: 3
+        type: integer
+      status:
+        enum:
+        - processing
+        - completed
+        - error
+        example: processing
+        type: string
+      step:
+        example: Finding relevant sources...
+        type: string
+      timestamp:
+        example: "2025-06-07T01:11:28Z"
+        type: string
+    type: object
+  SessionResponse:
+    properties:
+      created_at:
+        example: "2025-06-07T01:11:28Z"
+        type: string
+      id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      message_count:
+        example: 5
+        type: integer
+      query:
+        example: What are the latest developments in AI?
+        type: string
+      status:
+        enum:
+        - active
+        - completed
+        - failed
+        example: active
+        type: string
+      tags:
+        example:
+        - ai
+        - research
+        - technology
+        items:
+          type: string
+        type: array
+      title:
+        example: AI Research Session
+        type: string
+      updated_at:
+        example: "2025-06-07T01:15:28Z"
+        type: string
+      user_id:
+        example: 456e7890-e89b-12d3-a456-426614174001
+        type: string
+    type: object
+  SessionsListResponse:
+    properties:
+      page:
+        example: 1
+        type: integer
+      per_page:
+        example: 10
+        type: integer
+      sessions:
+        items:
+          $ref: '#/definitions/SessionResponse'
+        type: array
+      total:
+        example: 25
+        type: integer
+      total_pages:
+        example: 3
+        type: integer
+    type: object
+  UpdateSessionRequest:
+    properties:
+      tags:
+        example:
+        - ai
+        - research
+        - technology
+        - updated
+        items:
+          type: string
+        type: array
+      title:
+        example: Updated AI Research Session
+        type: string
+    type: object
+  UserInfo:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      name:
+        example: John Doe
+        type: string
+      role:
+        example: user
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: contact@deepresearch.ai
+    name: DeepResearch Team
+    url: http://www.deepresearch.ai
+  description: AI-powered research platform API
+  license:
+    name: MIT
+    url: http://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: DeepResearch API
+  version: 1.0.0
+paths:
+  /:
+    get:
+      description: Get welcome message for the API
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Welcome message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Welcome message
+      tags:
+      - general
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: User login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successful registration
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "409":
+          description: User already exists
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: User registration
+      tags:
+      - auth
+  /health:
+    get:
+      description: Check if the API is healthy and running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API is healthy
+          schema:
+            $ref: '#/definitions/HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /research/sessions:
+    get:
+      description: Get a paginated list of research sessions for the authenticated
+        user
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter by status
+        enum:
+        - active
+        - completed
+        - failed
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sessions retrieved successfully
+          schema:
+            $ref: '#/definitions/SessionsListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List research sessions
+      tags:
+      - research
+    post:
+      consumes:
+      - application/json
+      description: Create a new research session for the authenticated user
+      parameters:
+      - description: Session details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Session created successfully
+          schema:
+            $ref: '#/definitions/SessionResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create research session
+      tags:
+      - research
+  /research/sessions/{id}:
+    delete:
+      description: Delete a specific research session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Session deleted successfully
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete research session
+      tags:
+      - research
+    get:
+      description: Get details of a specific research session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session retrieved successfully
+          schema:
+            $ref: '#/definitions/SessionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get research session
+      tags:
+      - research
+    put:
+      consumes:
+      - application/json
+      description: Update details of a specific research session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session updated successfully
+          schema:
+            $ref: '#/definitions/SessionResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update research session
+      tags:
+      - research
+  /research/stream:
+    get:
+      description: Stream research progress in real-time using Server-Sent Events
+      parameters:
+      - description: Research query
+        in: query
+        name: query
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: Research progress stream
+          schema:
+            $ref: '#/definitions/ResearchProgressEvent'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Research streaming
+      tags:
+      - research
+securityDefinitions:
+  ApiKeyAuth:
+    description: Bearer token for API authentication (e.g., "Bearer {token}")
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

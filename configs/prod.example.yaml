@@ -1,0 +1,30 @@
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+database:
+  # Cloud PostgreSQL Service URI (replace with your actual service URI)
+  # Examples for different providers:
+  # Supabase: "postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres"
+  # Railway: "postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/railway"
+  # Neon: "postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]?sslmode=require"
+  # Render: "postgresql://[USER]:[PASSWORD]@[HOST]/[DATABASE]"
+  service_uri: "${DATABASE_URL}"
+  
+  # Connection pool settings for production
+  max_open_conns: 100
+  max_idle_conns: 25
+  conn_max_lifetime: 30 # minutes
+
+redis:
+  addr: "${REDIS_URL}"
+  password: "${REDIS_PASSWORD}"
+  db: 0
+
+jwt:
+  secret: "${JWT_SECRET}"
+  expiry_hours: 24
+
+grpc:
+  port: 9090
+  host: "0.0.0.0"

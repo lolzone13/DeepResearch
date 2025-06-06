@@ -14,12 +14,21 @@ type Config struct {
 	} `mapstructure:"server"`
 
 	Database struct {
+		// Service URI (used by cloud providers like Supabase, Railway, Neon)
+		ServiceURI string `mapstructure:"service_uri"`
+
+		// Traditional connection parameters (fallback if ServiceURI is not provided)
 		Host     string `mapstructure:"host"`
 		Port     int    `mapstructure:"port"`
 		User     string `mapstructure:"user"`
 		Password string `mapstructure:"password"`
 		DBName   string `mapstructure:"dbname"`
 		SSLMode  string `mapstructure:"sslmode"`
+
+		// Connection pool settings
+		MaxOpenConns    int `mapstructure:"max_open_conns"`
+		MaxIdleConns    int `mapstructure:"max_idle_conns"`
+		ConnMaxLifetime int `mapstructure:"conn_max_lifetime"` // in minutes
 	} `mapstructure:"database"`
 
 	Redis struct {
@@ -61,6 +70,12 @@ func LoadConfig(env string) (*Config, error) {
 
 // GetDatabaseDSN returns the database connection string
 func (c *Config) GetDatabaseDSN() string {
+	// If ServiceURI is provided, use it directly (cloud providers)
+	if c.Database.ServiceURI != "" {
+		return c.Database.ServiceURI
+	}
+
+	// Otherwise, build DSN from individual parameters (local/traditional setup)
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Database.Host,
 		c.Database.Port,

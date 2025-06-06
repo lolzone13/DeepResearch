@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Square, Wifi, WifiOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ResearchStep, ResearchState } from '../types/research';
+import { apiService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   AnimatedContainer, 
   AnimatedButton, 
@@ -12,9 +14,15 @@ import {
   PulseCard
 } from './animations';
 
-const BACKEND_URL = 'http://localhost:8080';
+interface ResearchStreamerProps {
+  query?: string;
+  onComplete?: (steps: ResearchStep[]) => void;
+}
 
-export const ResearchStreamer: React.FC = () => {
+export const ResearchStreamer: React.FC<ResearchStreamerProps> = ({ 
+  query = 'test research query',
+  onComplete
+}) => {
   const [state, setState] = useState<ResearchState>({
     isConnected: false,
     isStreaming: false,
@@ -24,64 +32,80 @@ export const ResearchStreamer: React.FC = () => {
     error: null,
   });
 
+  const { isAuthenticated } = useAuth();
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const startResearch = () => {
-    if (state.isStreaming) return;
+    if (state.isStreaming || !isAuthenticated) return;
 
     // Reset state
     setState(prev => ({
       ...prev,
       isStreaming: true,
       steps: [],
-      currentStep: 'Connecting...',
+      currentStep: 'Initializing research...',
       progress: 0,
       error: null,
     }));
 
-    // Create EventSource connection
-    eventSourceRef.current = new EventSource(`${BACKEND_URL}/research`);
+        try {
+      // Use the API service to create an authenticated research stream
+      eventSourceRef.current = apiService.createResearchStream(query);
 
-    eventSourceRef.current.onopen = () => {
-      setState(prev => ({
-        ...prev,
-        isConnected: true,
-        currentStep: 'Connected to research stream...',
-      }));
-    };
-
-    eventSourceRef.current.onmessage = (event) => {
-      try {
-        const data: ResearchStep = JSON.parse(event.data);
+      eventSourceRef.current.onopen = () => {
         setState(prev => ({
           ...prev,
-          steps: [...prev.steps, data],
-          currentStep: data.step,
-          progress: data.progress,
+          isConnected: true,
+          currentStep: 'Connected to authenticated research stream...',
         }));
+      };
 
-        // Auto-stop when complete
-        if (data.progress >= 100) {
-          setTimeout(() => stopResearch(), 1000);
+      eventSourceRef.current.onmessage = (event) => {
+        try {
+          const data: ResearchStep = JSON.parse(event.data);
+          setState(prev => ({
+            ...prev,
+            steps: [...prev.steps, data],
+            currentStep: data.step,
+            progress: data.progress,
+          }));
+
+          // Auto-stop when complete
+          if (data.progress >= 100) {
+            setTimeout(() => {
+              stopResearch();
+              if (onComplete) {
+                onComplete(state.steps);
+              }
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Failed to parse SSE data:', error);
+          setState(prev => ({
+            ...prev,
+            error: 'Failed to parse research data',
+          }));
         }
-      } catch (error) {
-        console.error('Failed to parse SSE data:', error);
+      };
+
+      eventSourceRef.current.onerror = (error) => {
+        console.error('SSE Error:', error);
         setState(prev => ({
           ...prev,
-          error: 'Failed to parse research data',
+          isConnected: false,
+          error: isAuthenticated 
+            ? 'Connection to research stream failed. Please try again.'
+            : 'Authentication required for research streaming.',
         }));
-      }
-    };
-
-    eventSourceRef.current.onerror = (error) => {
-      console.error('SSE Error:', error);
+        stopResearch();
+      };
+    } catch (error) {
+      console.error('Failed to start research stream:', error);
       setState(prev => ({
         ...prev,
-        isConnected: false,
-        error: 'Connection to research stream failed',
+        error: 'Failed to initialize research stream',
       }));
-      stopResearch();
-    };
+    }
   };
 
   const stopResearch = () => {

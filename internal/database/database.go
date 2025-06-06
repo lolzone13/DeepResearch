@@ -1,61 +1,38 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
 
-	"github.com/lolzone13/DeepResearch/internal/config"
-	"github.com/lolzone13/DeepResearch/internal/models"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	_ "github.com/lib/pq"
 )
 
-type DB struct {
-	*gorm.DB
-}
+func connectDB(connectionString string) {
+	serviceURI := connectionString
 
-// NewDatabase creates a new database connection
-func NewDatabase(cfg *config.Config) (*DB, error) {
-	dsn := cfg.GetDatabaseDSN()
+	conn, _ := url.Parse(serviceURI)
+	conn.RawQuery = "sslmode=verify-ca;sslrootcert=ca.pem"
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	db, err := sql.Open("postgres", conn.String())
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT version()")
+	if err != nil {
+		panic(err)
 	}
 
-	return &DB{db}, nil
-}
-
-// AutoMigrate runs database migrations for all models
-func (db *DB) AutoMigrate() error {
-	log.Println("Running database migrations...")
-
-	err := db.DB.AutoMigrate(models.AllModels()...)
-	if err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
+	for rows.Next() {
+		var result string
+		err = rows.Scan(&result)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Version: %s\n", result)
 	}
-
-	log.Println("Database migrations completed successfully")
-	return nil
-}
-
-// Close closes the database connection
-func (db *DB) Close() error {
-	sqlDB, err := db.DB.DB()
-	if err != nil {
-		return err
-	}
-	return sqlDB.Close()
-}
-
-// Health checks if the database connection is healthy
-func (db *DB) Health() error {
-	sqlDB, err := db.DB.DB()
-	if err != nil {
-		return err
-	}
-	return sqlDB.Ping()
 }

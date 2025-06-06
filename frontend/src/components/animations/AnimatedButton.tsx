@@ -9,6 +9,7 @@ interface AnimatedButtonProps {
   disabled?: boolean;
   className?: string;
   onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
@@ -19,6 +20,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   disabled = false,
   className = '',
   onClick,
+  type = 'button',
 }) => {
   const baseClasses = "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
   
@@ -39,6 +41,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
 
   return (
     <motion.button
+      type={type}
       className={combinedClassName}
       disabled={disabled || isLoading}
       onClick={onClick}

@@ -3,12 +3,21 @@ server:
   host: "localhost"
 
 database:
+  # For local development - use traditional connection parameters
   host: "localhost"
   port: 5432
   user: "postgres"
   password: "password"
   dbname: "deepresearch_dev"
   sslmode: "disable"
+  
+  # Connection pool settings
+  max_open_conns: 25
+  max_idle_conns: 10
+  conn_max_lifetime: 5 # minutes
+  
+  # For cloud PostgreSQL, uncomment and use service_uri instead:
+  # service_uri: "postgresql://username:password@hostname:port/database?sslmode=require"
 
 redis:
   addr: "localhost:6379"
