@@ -49,7 +49,7 @@ func (s *SessionService) CreateSession(userID, title, query string, tags []strin
 }
 
 // GetSession retrieves a session by ID and user ID
-func (s *SessionService) GetSession(sessionID, userID string) (*models.ResearchSession, error) {
+func (s *SessionService) GetSession(sessionID string, userID string) (*models.ResearchSession, error) {
 	sessionUUID, err := uuid.Parse(sessionID)
 	if err != nil {
 		return nil, errors.New("invalid session ID")
@@ -64,7 +64,8 @@ func (s *SessionService) GetSession(sessionID, userID string) (*models.ResearchS
 	err = s.db.Where("id = ? AND user_id = ?", sessionUUID, userUUID).
 		Preload("Messages").
 		Preload("Sources").
-		First(&session).Error
+		First(&session).
+		Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

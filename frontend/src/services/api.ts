@@ -153,10 +153,10 @@ class ApiService {
   // Alternative method for authenticated streaming using fetch with ReadableStream
   async createAuthenticatedResearchStream(query: string): Promise<ReadableStream<Uint8Array> | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/research/stream`, {
-        method: 'POST',
+      const params = new URLSearchParams({ query });
+      const response = await fetch(`${API_BASE_URL}/research/stream?${params}`, {
+        method: 'GET',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ query }),
       });
 
       if (!response.ok) {

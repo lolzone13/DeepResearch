@@ -6,21 +6,21 @@ import { AuthModal } from './AuthModal';
 import { useSessions } from '../hooks/useSessions';
 import { useAuth } from '../contexts/AuthContext';
 import type { Message } from '../types/research';
+import { apiService } from '../services/api';
 
 export const ChatLayout: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const { isAuthenticated } = useAuth();
   const {
     sessions,
     currentSession,
     currentSessionId,
-    messages,
     createSession,
     updateSession,
-    deleteSession,
     selectSession,
     error: sessionError,
     clearError
@@ -52,26 +52,25 @@ export const ChatLayout: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
-    if (!currentSessionId || !isAuthenticated) return;
-
+  const processSendMessage = async (content: string, sessionId: string) => {
     setIsLoading(true);
 
     // Add user message immediately
     const userMessage: Message = {
       id: Date.now().toString(),
-      sessionId: currentSessionId,
+      sessionId: sessionId,
       type: 'user',
       content,
       isVisible: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    setMessages(prev => [...prev, userMessage]);
 
     // Update session title if it's a new session with default title
     if (currentSession && currentSession.title === 'New Research Session' && currentSession.messageCount === 0) {
       try {
-        await updateSession(currentSessionId, {
+        await updateSession(sessionId, {
           title: content.length > 50 ? content.substring(0, 50) + '...' : content,
           description: `Research query: ${content}`,
         });
@@ -80,53 +79,116 @@ export const ChatLayout: React.FC = () => {
       }
     }
 
-    // TODO: Implement real research streaming
-    // For now, we'll create a placeholder response that shows the system is ready for streaming
-    setTimeout(() => {
-      const assistantMessage: Message = {
+    // Start research streaming from backend
+    try {
+      const stream = await apiService.createAuthenticatedResearchStream(content);
+
+      if (!stream) {
+        throw new Error('Failed to create research stream');
+      }
+
+      let assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        sessionId: currentSessionId,
+        sessionId: sessionId,
         type: 'assistant',
-        content: `I understand you're asking about "${content}". 
-
-🎉 **Great news!** The frontend is now fully integrated with authentication and ready for real research streaming!
-
-**What's working:**
-✅ JWT Authentication with secure token management  
-✅ Session management with database integration  
-✅ API service consolidating all backend calls  
-✅ Real-time UI updates and loading states  
-✅ Error handling and user feedback  
-
-**Next steps to enable full research streaming:**
-1. **Connect to backend research endpoint** - Replace this mock with apiService.createResearchStream()
-2. **Handle real-time SSE events** - Process actual research progress updates
-3. **Display live thinking steps** - Show actual source gathering and analysis
-4. **Render authentic citations** - Display real sources and references
-
-The authentication flow is working perfectly - try signing out and back in to test it!`,
+        content: '',
         isVisible: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        thoughts: [
-          {
-            id: Date.now().toString() + '_thought1',
-            messageId: (Date.now() + 1).toString(),
-            type: 'searching',
-            title: 'System Ready for Integration',
-            content: 'Authentication verified, session active, API service connected. Ready for real research streaming implementation.',
-            status: 'completed',
-            progress: 100,
-            startedAt: new Date().toISOString(),
-            completedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ],
+        thoughts: [],
       };
+      setMessages(prev => [...prev, assistantMessage]);
 
+      // Process the stream
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process complete lines
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (line.trim() === '') continue;
+            
+            // Parse SSE data line
+            if (line.startsWith('data: ')) {
+              const jsonStr = line.substring(6);
+              try {
+                const data = JSON.parse(jsonStr);
+                
+                // Update assistant message with streaming progress
+                assistantMessage = {
+                  ...assistantMessage,
+                  content: data.step || assistantMessage.content,
+                  thoughts: [
+                    ...(assistantMessage.thoughts || []),
+                    {
+                      id: Date.now().toString(),
+                      messageId: assistantMessage.id,
+                      type: data.type || 'searching',
+                      title: data.step || 'Researching...',
+                      content: data.step || '',
+                      status: data.progress >= 100 ? 'completed' : 'processing',
+                      progress: data.progress,
+                      startedAt: new Date().toISOString(),
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                    },
+                  ],
+                };
+                setMessages(prev => prev.map(m => m.id === assistantMessage.id ? assistantMessage : m));
+                
+                if (data.progress >= 100) {
+                  setIsLoading(false);
+                  break;
+                }
+              } catch (err) {
+                console.error('Failed to parse research stream event:', err);
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (err) {
       setIsLoading(false);
-    }, 1500);
+      console.error('Failed to start research stream:', err);
+    }
+  };
+
+  const handleSendMessage = async (content: string) => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    // Auto-create session if none exists
+    if (!currentSessionId) {
+      try {
+        await createSession('New Research Session', '');
+        // After session creation, use a timeout to ensure state has updated
+        setTimeout(() => {
+          if (currentSessionId) {
+            processSendMessage(content, currentSessionId);
+          }
+        }, 100);
+        return;
+      } catch (error) {
+        console.error('Failed to create session:', error);
+        return;
+      }
+    }
+
+    // Process the message directly if we have a session
+    await processSendMessage(content, currentSessionId);
   };
 
   // Show authentication modal if not logged in
@@ -163,7 +225,7 @@ The authentication flow is working perfectly - try signing out and back in to te
       {/* Sidebar */}
       <ChatHistory
         sessions={sessions}
-        currentSessionId={currentSessionId}
+        currentSessionId={currentSessionId || undefined}
         onSessionSelect={handleSessionSelect}
         onNewSession={handleNewSession}
         isCollapsed={isSidebarCollapsed}
